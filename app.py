@@ -3,6 +3,7 @@ import os
 import re
 from fpdf import FPDF, XPos, YPos
 from dotenv import load_dotenv
+from datetime import datetime
 
 
 """
@@ -144,8 +145,10 @@ class PDF(FPDF):
         self.ln(20) 
     
     def generateDetailComponentListTable(self) -> None:
+        gap = '\t'
+
         for i, component in enumerate(self.detail.components):
-            self.set_line_width(.1)
+            self.set_line_width(.05)
             self.set_font('times', 'I', 6)
             self.cell(75, 6, "Nazwa:")
             self.cell(15, 6, "Na komplet:")
@@ -154,8 +157,8 @@ class PDF(FPDF):
             self.ln(-1)
 
             self.set_font('times', '', 12)
-            self.cell(75, 15, component.filename, border=True)
-            self.cell(15, 15, str(component.count), border=True)
+            self.cell(75, 15, gap+component.filename)
+            self.cell(15, 15, gap+str(component.count))
 
             self.cell(30, 30, '', border=True)
             self.ln(15)
@@ -168,16 +171,36 @@ class PDF(FPDF):
             self.ln(-1)
 
             self.set_font('times', '', 12)
-            self.cell(75, 15, component.sheet, border=True)
-            self.cell(15, 15, 'Tak' if component.engraver else 'Nie', border=True)
+            self.cell(75, 15, gap+component.sheet)
+            self.cell(15, 15, gap+('Tak' if component.engraver else 'Nie'))
             self.ln(15)
-            pos_size = {
+            img_pos_size = {
                 'x': 100,
                 'y': 30*(i%5)+20,
                 'w': 30,
                 'h': 30
             }
-            self.image(os.path.join(IMAGE_FOLDER, component.filename+'.png'), keep_aspect_ratio=True, **pos_size)
+            self.image(os.path.join(IMAGE_FOLDER, component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
+
+            line_pos = [
+                {
+                    'x1': 10,
+                    'y1': 30*(i%5)+35,
+                    'x2': 100,
+                    'y2': 30*(i%5)+35,
+                },
+                {
+                    'x1': 85,
+                    'y1': 30*(i%5)+20,
+                    'x2': 85,
+                    'y2': 30*(i%5)+50,
+                },
+            ]
+
+            self.set_dash_pattern(1, 1)
+            for pos in line_pos:
+                self.line(**pos)
+            self.set_dash_pattern()
             self.set_line_width(.4)
             self.ln(-30)
             self.cell(120, 30, '', border=True)
