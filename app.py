@@ -79,9 +79,11 @@ class Detail:
                 if filename.startswith(self.serialNumber) and filename.endswith('png'):
                     self.components.append(self.generateComponent(filename))
 
+        self.components.sort(key=lambda component: component.sheet)
+
     def generateComponent(self, filename: str) -> Component:
         filename = filename.removesuffix('.png')
-        fixedName = filename.replace(' ', '_').lower().replace('#_', '#') + '_'
+        fixedName = filename.replace(' ', '_').replace('#_', '#') + '_'
 
         # Wartości numeryczne pomiędzy nawiasami
         countSearch = re.findall(r"\((\d+)\)", fixedName) 
@@ -97,7 +99,16 @@ class Detail:
         else:
             sheet = '???'
 
-        engraver = 'gr' in fixedName
+        if sheet.lower().endswith('almg3'):
+            sheetSearch: list[str] = re.findall(r"(#[^_]*_[^_]*_[^_]*)", fixedName) 
+            if len(sheetSearch) > 0:
+                sheet = sheetSearch[0].replace('_', ' ')
+        else:
+            index = sheet.lower().find('almg3')
+            if index > -1:
+                sheet = sheet[:index+5] + ' ' + sheet[index+5:]
+
+        engraver = 'gr' in fixedName.lower()
 
         return Component(
             filename=filename,
@@ -133,6 +144,7 @@ class PDF(FPDF):
     
     def generateDetailComponentListTable(self) -> None:
         for i, component in enumerate(self.detail.components):
+            self.set_line_width(.1)
             self.set_font('times', 'I', 6)
             self.cell(60, 6, "Nazwa:")
             self.cell(30, 6, "Na komplet:")
@@ -165,6 +177,11 @@ class PDF(FPDF):
                 'h': 30
             }
             self.image(os.path.join(IMAGE_FOLDER, component.filename+'.png'), keep_aspect_ratio=True, **pos_size)
+            self.set_line_width(.4)
+            self.ln(-30)
+            self.cell(120, 30, '', border=True)
+            self.ln(30)
+
             if not (i+1)%5:
                 self.add_page()
 
