@@ -58,11 +58,14 @@ class Detail:
             print(f'Detal "SN {self.serialNumber}" nie znaleziony.')
             return
 
-        pdf = PDF('P', 'mm', 'A5')
+        pdf = PDF(self, 'P', 'mm', 'A5')
         pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
 
-        pdf.generateDetailComponentListTable(self)
+        pdf.generateDetailComponentListTable()
+
+        if not os.path.exists('output'):
+            os.makedirs('output')
 
         pdf.output(fileName := f'output\\SN_{self.serialNumber}.pdf')
 
@@ -70,14 +73,11 @@ class Detail:
 
         return fileName
 
-
-
     def fillComponentList(self):
         for root, dirs, files in os.walk(IMAGE_FOLDER):
             for filename in files:
                 if filename.startswith(self.serialNumber) and filename.endswith('png'):
                     self.components.append(self.generateComponent(filename))
-
 
     def generateComponent(self, filename: str) -> Component:
         filename = filename.removesuffix('.png')
@@ -114,9 +114,13 @@ class Detail:
 
 
 class PDF(FPDF):
+    def __init__(self, detail: Detail, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.detail = detail
+
     def header(self) -> None:
         self.set_font('times', 'B', 20)
-        self.cell(0, 10, 'SN 1000', border=False, new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
+        self.cell(0, 10, f'SN {self.detail.serialNumber}', border=False, new_x=XPos.LMARGIN, new_y=YPos.NEXT, align='C')
 
     def footer(self) -> None:
         self.set_y(-15)
@@ -127,8 +131,8 @@ class PDF(FPDF):
         self.cell(0, 5, footerText2, border=False, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.ln(20) 
     
-    def generateDetailComponentListTable(self, detail: Detail) -> None:
-        for i, component in enumerate(detail.components):
+    def generateDetailComponentListTable(self) -> None:
+        for i, component in enumerate(self.detail.components):
             self.set_font('times', 'I', 6)
             self.cell(60, 6, "Nazwa:")
             self.cell(30, 6, "Na komplet:")
