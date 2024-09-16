@@ -99,6 +99,7 @@ class Detail:
         else:
             sheet = '???'
 
+        # Jeżeli aluminium, sprawdź czy nie ma konkretnego gatunku później
         if sheet.lower().endswith('almg3'):
             sheetSearch: list[str] = re.findall(r"(#[^_]*_[^_]*_[^_]*)", fixedName) 
             if len(sheetSearch) > 0:
@@ -146,29 +147,29 @@ class PDF(FPDF):
         for i, component in enumerate(self.detail.components):
             self.set_line_width(.1)
             self.set_font('times', 'I', 6)
-            self.cell(60, 6, "Nazwa:")
-            self.cell(30, 6, "Na komplet:")
+            self.cell(75, 6, "Nazwa:")
+            self.cell(15, 6, "Na komplet:")
             # FPDF.ln(0) obniża o wysokość czcionki
             self.ln(1)
             self.ln(-1)
 
             self.set_font('times', '', 12)
-            self.cell(60, 15, component.filename, border=True)
-            self.cell(30, 15, str(component.count), border=True)
+            self.cell(75, 15, component.filename, border=True)
+            self.cell(15, 15, str(component.count), border=True)
 
             self.cell(30, 30, '', border=True)
             self.ln(15)
 
             self.set_font('times', 'I', 6)
-            self.cell(60, 6, "Blacha:")
-            self.cell(30, 6, "Grawer:")
+            self.cell(75, 6, "Blacha:")
+            self.cell(15, 6, "Grawer:")
             # FPDF.ln(0) obniża o wysokość czcionki
             self.ln(1)
             self.ln(-1)
 
             self.set_font('times', '', 12)
-            self.cell(60, 15, component.sheet, border=True)
-            self.cell(30, 15, 'Tak' if component.engraver else 'Nie', border=True)
+            self.cell(75, 15, component.sheet, border=True)
+            self.cell(15, 15, 'Tak' if component.engraver else 'Nie', border=True)
             self.ln(15)
             pos_size = {
                 'x': 100,
