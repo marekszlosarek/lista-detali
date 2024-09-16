@@ -60,8 +60,6 @@ class Detail:
             return
 
         pdf = PDF(self, 'P', 'mm', 'A5')
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_page()
 
         pdf.generateDetailComponentListTable()
 
@@ -130,6 +128,7 @@ class PDF(FPDF):
     def __init__(self, detail: Detail, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.detail = detail
+        self.supported_characters = set("""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-!? '"()[]{}""")
 
     def header(self) -> None:
         self.set_font('times', 'B', 20)
@@ -139,25 +138,33 @@ class PDF(FPDF):
         self.set_y(-15)
         self.set_font('times', 'I', 10)
         footerText = "Wygenerowane automatycznie przez skrypt w fazie testowej."
-        footerText2= "Wszystkie niezgodnosci prosze zglosic do Marka Szlosarka z G9."
-        self.cell(0, 5, footerText, border=False, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-        self.cell(0, 5, footerText2, border=False, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        footerText2= "Wygenerowano:"
+        footerText3= "Wszystkie niezgodnosci prosze zglosic do Marka Szlosarka z G9."
+        footerTimestamp = datetime.now().strftime('%d.%m.%y %H:%M')
+        self.cell(0, 5, footerText, border=False)
+        self.cell(0, 5, footerText2, border=False, align="R", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+        self.cell(0, 5, footerText3, border=False)
+        self.cell(0, 5, footerTimestamp, border=False, align="R", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
         self.ln(20) 
-    
+
     def generateDetailComponentListTable(self) -> None:
         gap = '\t'
+        self.set_auto_page_break(auto=True, margin=15)
+        self.add_page()
+        self.set_fill_color(255, 255, 255)
 
         for i, component in enumerate(self.detail.components):
+            # Dane detalu
             self.set_line_width(.05)
             self.set_font('times', 'I', 6)
             self.cell(75, 6, "Nazwa:")
             self.cell(15, 6, "Na komplet:")
-            # FPDF.ln(0) obniża o wysokość czcionki
-            self.ln(1)
-            self.ln(-1)
+            self.set_x(10)
 
             self.set_font('times', '', 12)
-            self.cell(75, 15, gap+component.filename)
+            self.cell(75, 15, gap+''.join(c for c in component.filename if c in self.supported_characters))
             self.cell(15, 15, gap+str(component.count))
 
             self.cell(30, 30, '', border=True)
@@ -166,14 +173,15 @@ class PDF(FPDF):
             self.set_font('times', 'I', 6)
             self.cell(75, 6, "Blacha:")
             self.cell(15, 6, "Grawer:")
-            # FPDF.ln(0) obniża o wysokość czcionki
-            self.ln(1)
-            self.ln(-1)
+            self.set_x(10)
 
             self.set_font('times', '', 12)
             self.cell(75, 15, gap+component.sheet)
             self.cell(15, 15, gap+('Tak' if component.engraver else 'Nie'))
-            self.ln(15)
+            
+
+
+            # Obrazek
             img_pos_size = {
                 'x': 100,
                 'y': 30*(i%5)+20,
@@ -182,6 +190,13 @@ class PDF(FPDF):
             }
             self.image(os.path.join(IMAGE_FOLDER, component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
 
+            # Numer składowej
+            self.ln(10.5)
+            self.set_x(100)
+            self.cell(None, None, f'{i+1}/{len(self.detail.components)}', border=True, fill=True)
+            self.ln(4.5)
+
+            # Linie przerywane między komórkami
             line_pos = [
                 {
                     'x1': 10,
@@ -201,6 +216,7 @@ class PDF(FPDF):
             for pos in line_pos:
                 self.line(**pos)
             self.set_dash_pattern()
+
             self.set_line_width(.4)
             self.ln(-30)
             self.cell(120, 30, '', border=True)
