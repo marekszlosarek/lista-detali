@@ -65,6 +65,8 @@ class Detail:
     def generateComponent(self, filename: str) -> Component:
         filename = filename.removesuffix('.png')
         fixedName = filename.replace(' ', '_').replace('#_', '#') + '_'
+        while '__' in fixedName:
+            fixedName.replace('__', '_')
 
         # Wartości numeryczne pomiędzy nawiasami
         countSearch = re.findall(r"\((\d+)\)", fixedName) 
@@ -110,7 +112,7 @@ class PDF(FPDF):
     def __init__(self, detail: Detail, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.detail = detail
-        self.supported_characters = set("""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-!? '"()[]{}""")
+        self.supported_characters = set("""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-!? '"()[]{}#_""")
 
     def header(self) -> None:
         self.set_font('times', 'B', 20)
@@ -134,10 +136,13 @@ class PDF(FPDF):
     def generateDetailComponentListTable(self) -> None:
         gap = '\t'
         self.set_auto_page_break(auto=True, margin=15)
-        self.add_page()
         self.set_fill_color(255, 255, 255)
 
         for i, component in enumerate(self.detail.components):
+            # Dodaj strony przy pierwszym i co szóstym detalu
+            if not i%5:
+                self.add_page()
+
             # Dane detalu
             self.set_line_width(.05)
             self.set_font('times', 'I', 6)
@@ -204,8 +209,7 @@ class PDF(FPDF):
             self.cell(120, 30, '', border=True)
             self.ln(30)
 
-            if not (i+1)%5:
-                self.add_page()
+
 
 
 if __name__ == '__main__':
