@@ -15,11 +15,13 @@ class Component:
             self,
             filename: str,
             count: int,
+            thickness: float,
             sheet: str,
             engraver: bool,
             detail: Detail,
         ) -> None:
         self.filename = filename
+        self.thickness = thickness
         self.count = count
         self.sheet = sheet
         self.engraver = engraver
@@ -60,7 +62,7 @@ class Detail:
                 if filename.startswith(self.serialNumber) and filename.endswith('png'):
                     self.components.append(self.generateComponent(filename))
 
-        self.components.sort(key=lambda component: component.sheet)
+        self.components.sort(key=lambda component: component.thickness)
 
     def generateComponent(self, filename: str) -> Component:
         filename = filename.removesuffix('.png')
@@ -74,6 +76,13 @@ class Detail:
             count = countSearch[0]
         else:
             count = 1
+
+        # Wartość od "#" do pierwszego podkreślnika
+        thicknessSearch: list[str] = re.findall(r"#([^_]*)", fixedName)
+        try:
+            thickness = float(thicknessSearch[0].replace(',', '.'))
+        except (IndexError, ValueError): 
+            thickness = 999
 
         # Wartość od "#" do drugiego podkreślnika
         sheetSearch: list[str] = re.findall(r"(#[^_]*_[^_]*)", fixedName) 
@@ -97,6 +106,7 @@ class Detail:
         return Component(
             filename=filename,
             count=count,
+            thickness=thickness,
             sheet=sheet,
             engraver=engraver,
             detail=self
