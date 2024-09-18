@@ -45,4 +45,4 @@ Projekt `lista-detali` służy do generowania plików PDF, które zawierają lis
 
 ## Licencja
 
-Projekt jest dostępny na customowej licencji.
+Projekt jest dostępny na licencji MIT.
