@@ -52,8 +52,6 @@ class Detail:
 
         pdf.output(fileName := f'output\\SN_{self.serialNumber}.pdf')
 
-        print(f'Zapisano w pliku "{fileName}"')
-
         return fileName
 
     def fillComponentList(self):
