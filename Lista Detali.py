@@ -2,12 +2,27 @@ from __future__ import annotations
 import os
 import re
 from fpdf import FPDF, XPos, YPos
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
 
 
-load_dotenv()
-IMAGE_FOLDER = os.getenv('IMAGE_FOLDER')
+class EnvConfig:
+    @staticmethod
+    def load_env() -> None:
+        if not find_dotenv():
+            EnvConfig.generate_env()
+        load_dotenv()
+    
+    @staticmethod
+    def generate_env() -> None:
+        with open('.env', 'w') as env:
+            env.write('IMAGE_FOLDER=\\\\server\\Maszyny\\Bysprint Fiber 2000\\Ustawienia Bysoft 7\\Parts\\PRODUKCJA')
+    
+    @staticmethod
+    def get_image_folder() -> str:
+        EnvConfig.load_env()
+
+        return os.getenv('IMAGE_FOLDER')
 
 
 class Component:
@@ -55,7 +70,7 @@ class Detail:
         return fileName
 
     def fillComponentList(self):
-        for root, dirs, files in os.walk(IMAGE_FOLDER):
+        for root, dirs, files in os.walk(EnvConfig.get_image_folder()):
             for filename in files:
                 if filename.startswith(self.serialNumber) and filename.endswith('png'):
                     self.components.append(self.generateComponent(filename))
@@ -183,7 +198,7 @@ class PDF(FPDF):
                 'w': 30,
                 'h': 30
             }
-            self.image(os.path.join(IMAGE_FOLDER, component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
+            self.image(os.path.join(EnvConfig.get_image_folder(), component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
 
             # Numer składowej
             self.ln(10.5)

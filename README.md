@@ -20,7 +20,7 @@ Projekt `lista-detali` służy do generowania plików PDF, które zawierają lis
 
 ## Użycie
 
-1. Uruchom plik `lista-detali\dist\app.exe`
+1. Uruchom plik `lista-detali\dist\Lista Detali\Lista Detali.exe`
 
 2. Wprowadź numer SN detalu.
 
