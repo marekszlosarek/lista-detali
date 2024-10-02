@@ -4,6 +4,7 @@ import re
 from fpdf import FPDF, XPos, YPos
 from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
+import tkinter as tk
 
 
 class EnvConfig:
@@ -15,7 +16,9 @@ class EnvConfig:
     
     @staticmethod
     def generate_env() -> None:
-        with open('.env', 'w') as env:
+        if not os.path.exists('_internal'):
+            os.makedirs('_internal')
+        with open('_internal/.env', 'w') as env:
             env.write('IMAGE_FOLDER=\\\\server\\Maszyny\\Bysprint Fiber 2000\\Ustawienia Bysoft 7\\Parts\\PRODUKCJA')
     
     @staticmethod
@@ -51,12 +54,13 @@ class Detail:
         self.serialNumber: str = serialNumber
         self.components: list[Component] = [] 
 
-    def generatePDF(self) -> None:
-        self.fillComponentList()
+    def generatePDF(self) -> bool:
+        if not self.serialNumber.isnumeric():
+            return False
 
+        self.fillComponentList()
         if len(self.components) == 0:
-            print(f'Detal "SN {self.serialNumber}" nie znaleziony.')
-            return
+            return False
 
         pdf = PDF(self, 'P', 'mm', 'A5')
 
@@ -64,15 +68,21 @@ class Detail:
 
         if not os.path.exists('output'):
             os.makedirs('output')
+        
+        self.fileName = f'output\\SN_{self.serialNumber}.pdf'
+        pdf.output(self.fileName)
+    
+        return True
 
-        pdf.output(fileName := f'output\\SN_{self.serialNumber}.pdf')
-
-        return fileName
 
     def fillComponentList(self):
         for root, dirs, files in os.walk(EnvConfig.get_image_folder()):
             for filename in files:
-                if filename.startswith(self.serialNumber) and filename.endswith('png'):
+                if filename.endswith('png') and (
+                    filename.startswith(self.serialNumber + ' ') or 
+                    filename.startswith(self.serialNumber + '-') or
+                    filename.startswith(self.serialNumber + '_') 
+                ):
                     self.components.append(self.generateComponent(filename))
 
         self.components.sort(key=lambda component: component.thickness)
@@ -233,12 +243,66 @@ class PDF(FPDF):
             self.ln(30)
 
 
+class Window:
+    def __init__(self, root: tk.Tk) -> None:
+        self.root = root
+        self.root.resizable(width=False, height=False)
+        self.root.title('Lista Składowych Detalu')
+        self.root.geometry('448x317')
+        root.iconbitmap("_internal\\resources\\icon.ico")
+        self.root.bind('<Key>', self.keyPress)
+        
+        self.background = tk.PhotoImage(file = '.\\_internal\\resources\\background.png')
+        self.canvas = tk.Canvas(self.root, width=450, height=317)
+        self.canvas.place(x=-2, y=0)
+        self.canvas.create_image(0, 0, image=self.background, anchor='nw')
+        
+        self.snLabel = tk.Label(self.root, font=['Times', 20, 'bold'], width=3, text = 'SN ', bg='#FFFFFF')
+        self.snLabel.place(x=300, y=200)
+
+        self.checkEntryText = tk.StringVar()
+        self.checkEntryText.trace_add('write', self.checkEntry)
+        self.snEntry = tk.Entry(self.root, font=['Times', 20, 'bold'], width=5, textvariable=self.checkEntryText)
+        self.snEntry.config(borderwidth=0)
+        self.snEntry.place(x=345, y=200, height=37)
+
+        self.snButton = tk.Button(self.root, text='Generuj PDF', font=['Times', 10, 'bold'], command=self.generatePDF, state=tk.DISABLED)
+        self.canvasSnButton = self.canvas.create_window(
+            337, 240,
+            anchor='nw',
+            window=self.snButton
+        ) 
+
+        self.snResultId = self.canvas.create_text(360, 280, text='', fill='#ffffff', font='Times') 
+
+    def generatePDF(self) -> None:
+        sn = self.snEntry.get()
+        detail = Detail(sn)
+        self.canvas.itemconfig(self.snResultId, text = 'Generuję PDF...')
+        self.root.update()
+        if detail.generatePDF():
+            os.startfile(detail.fileName)
+            self.canvas.itemconfig(self.snResultId, text = 'PDF wygenerowany')
+            return
+        
+        self.canvas.itemconfig(self.snResultId, text = 'SN nie znaleziony')
+        
+    def checkEntry(self, *args) -> None:
+        if self.checkEntryText.get():
+            self.snButton.config(state=tk.NORMAL)
+        else:
+            self.snButton.config(state=tk.DISABLED)
+            
+    def keyPress(self, event) -> None:
+        if not event.keysym == 'Return':
+            return
+
+        if self.checkEntryText.get():
+            self.generatePDF()
 
 
 if __name__ == '__main__':
-    sn = input('Podaj numer detalu:\nSN ')
-    d = Detail(sn)
-    fileName = d.generatePDF()
-    if fileName:
-        os.startfile(fileName)
-    input('Wciśnij Enter, żeby zamknąć...')
+    root = tk.Tk()
+    app = Window(root)
+    root.mainloop()
+

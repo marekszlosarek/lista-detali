@@ -1,4 +1,5 @@
 .env
 /output/*
 /build
-/dist/Lista Detali/output/*
+/dist/Składowe/output/*
+/_internal/.env
