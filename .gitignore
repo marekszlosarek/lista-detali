@@ -2,3 +2,4 @@
 /output/*
 /build
 /dist/Lista Detali/output/*
+/_internal/.env
