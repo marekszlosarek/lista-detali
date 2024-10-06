@@ -3,54 +3,33 @@ import os
 import json
 import re
 from fpdf import FPDF, XPos, YPos
-from dotenv import load_dotenv, find_dotenv
 from datetime import datetime
 import tkinter as tk
 
 
-class EnvConfig:
-    @staticmethod
-    def load_env() -> None:
-        if not find_dotenv():
-            EnvConfig.generate_env()
-        load_dotenv()
-    
-    @staticmethod
-    def generate_env() -> None:
-        if not os.path.exists('_internal'):
-            os.makedirs('_internal')
-        with open('_internal/.env', 'w') as env:
-            env.write('IMAGE_FOLDER=\\\\server\\Maszyny\\Bysprint Fiber 2000\\Ustawienia Bysoft 7\\Parts\\PRODUKCJA')
-    
-    @staticmethod
-    def get_image_folder() -> str:
-        EnvConfig.load_env()
-
-        return os.getenv('IMAGE_FOLDER')
-    
-
 class SettingsHandler:
-    @staticmethod
-    def loadSettings() -> dict:
+    def __init__(self) -> None:
+        self.settings: dict = self.loadSettings()
+
+    def loadSettings(self) -> dict:
         try:
             with open('settings.json', 'r') as file:
-                return json.load(file)
-        except FileNotFoundError:
-            return SettingsHandler.generateDefaultSettings()
+                data= json.load(file)
+                return data
+        except (FileNotFoundError):
+            return self.generateDefaultSettings()
 
-    @staticmethod
-    def generateDefaultSettings() -> dict:
+    def generateDefaultSettings(self) -> dict:
         default = {
             'IMAGE_FOLDER': '\\\\server\\Maszyny\\Bysprint Fiber 2000\\Ustawienia Bysoft 7\\Parts\\PRODUKCJA',
         }
         with open('settings.json', 'w') as settings:
-            settings.write(default)
+            settings.write(json.dumps(default))
 
         return default
   
-    @staticmethod  
-    def getImageFolder() -> str:
-        return SettingsHandler.loadSettings()['IMAGE_FOLDER']
+    def getImageFolder(self) -> str:
+        return self.settings['IMAGE_FOLDER']
 
 
 
@@ -76,9 +55,10 @@ class Component:
 
 
 class Detail:
-    def __init__(self, serialNumber: str) -> None:
+    def __init__(self, serialNumber: str, imagePath: str) -> None:
         self.serialNumber: str = serialNumber
         self.components: list[Component] = [] 
+        self.imagePath= imagePath
 
     def generatePDF(self) -> bool:
         if not self.serialNumber.isnumeric():
@@ -88,7 +68,7 @@ class Detail:
         if len(self.components) == 0:
             return False
 
-        pdf = PDF(self, 'P', 'mm', 'A5')
+        pdf = PDF(self, self.imagePath, 'P', 'mm', 'A5')
 
         pdf.generateDetailComponentListTable()
 
@@ -102,7 +82,7 @@ class Detail:
 
 
     def fillComponentList(self):
-        for root, dirs, files in os.walk(SettingsHandler.getImageFolder()):
+        for root, dirs, files in os.walk(self.imagePath):
             for filename in files:
                 if filename.endswith('png') and (
                     filename.startswith(self.serialNumber + ' ') or 
@@ -168,9 +148,10 @@ class Detail:
 
 
 class PDF(FPDF):
-    def __init__(self, detail: Detail, *args, **kwargs):
+    def __init__(self, detail: Detail, imagePath: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.detail = detail
+        self.imagePath = imagePath
         self.supported_characters = set("""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-!? '"()[]{}#_""")
 
     def header(self) -> None:
@@ -234,7 +215,7 @@ class PDF(FPDF):
                 'w': 30,
                 'h': 30
             }
-            self.image(os.path.join(SettingsHandler.getImageFolder(), component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
+            self.image(os.path.join(self.imagePath, component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
 
             # Numer składowej
             self.ln(10.5)
@@ -270,7 +251,7 @@ class PDF(FPDF):
 
 
 class MainWindow:
-    def __init__(self, root: tk.Tk) -> None:
+    def __init__(self, root: tk.Tk, settings: SettingsHandler) -> None:
         self.root = root
         self.root.resizable(width=False, height=False)
         self.root.title('Lista Składowych Detalu')
@@ -309,10 +290,12 @@ class MainWindow:
         self.snExplanation.place(x=0, y=0)
         self.snExplanationInit = True
 
+        self.imagePath = settings.getImageFolder()
+
 
     def generatePDF(self) -> None:
         sn = self.snEntry.get()
-        detail = Detail(sn)
+        detail = Detail(sn, self.imagePath)
         self.canvas.itemconfig(self.snResultId, text = 'Generuję PDF...')
         self.root.update()
         if detail.generatePDF():
@@ -376,6 +359,7 @@ class MainWindow:
 
 if __name__ == '__main__':
     root = tk.Tk()
-    app = MainWindow(root)
+    settings = SettingsHandler()
+    app = MainWindow(root, settings)
     root.mainloop()
 
