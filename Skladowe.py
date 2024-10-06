@@ -1,5 +1,6 @@
 from __future__ import annotations
 import os
+import json
 import re
 from fpdf import FPDF, XPos, YPos
 from dotenv import load_dotenv, find_dotenv
@@ -26,6 +27,31 @@ class EnvConfig:
         EnvConfig.load_env()
 
         return os.getenv('IMAGE_FOLDER')
+    
+
+class SettingsHandler:
+    @staticmethod
+    def loadSettings() -> dict:
+        try:
+            with open('settings.json', 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            return SettingsHandler.generateDefaultSettings()
+
+    @staticmethod
+    def generateDefaultSettings() -> dict:
+        default = {
+            'IMAGE_FOLDER': '\\\\server\\Maszyny\\Bysprint Fiber 2000\\Ustawienia Bysoft 7\\Parts\\PRODUKCJA',
+        }
+        with open('settings.json', 'w') as settings:
+            settings.write(default)
+
+        return default
+  
+    @staticmethod  
+    def getImageFolder() -> str:
+        return SettingsHandler.loadSettings()['IMAGE_FOLDER']
+
 
 
 class Component:
@@ -76,7 +102,7 @@ class Detail:
 
 
     def fillComponentList(self):
-        for root, dirs, files in os.walk(EnvConfig.get_image_folder()):
+        for root, dirs, files in os.walk(SettingsHandler.getImageFolder()):
             for filename in files:
                 if filename.endswith('png') and (
                     filename.startswith(self.serialNumber + ' ') or 
@@ -208,7 +234,7 @@ class PDF(FPDF):
                 'w': 30,
                 'h': 30
             }
-            self.image(os.path.join(EnvConfig.get_image_folder(), component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
+            self.image(os.path.join(SettingsHandler.getImageFolder(), component.filename+'.png'), keep_aspect_ratio=True, **img_pos_size)
 
             # Numer składowej
             self.ln(10.5)

@@ -3,3 +3,4 @@
 /build
 /dist
 /_internal/.env
+settings.json
