@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['Lista Detali.py'],
+    ['Skladowe.py'],
     pathex=[],
     binaries=[],
     datas=[('.\\_internal\\resources\\', '.\\resources\\')],
