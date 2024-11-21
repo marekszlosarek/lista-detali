@@ -152,7 +152,7 @@ class PDF(FPDF):
         super().__init__(*args, **kwargs)
         self.detail = detail
         self.imagePath = imagePath
-        self.supported_characters = set("""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-!? '"()[]{}#_""")
+        self.supported_characters = set("""abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.-!? '"()[]{}#_+""")
 
     def header(self) -> None:
         self.set_font('times', 'B', 20)
