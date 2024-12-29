@@ -21,7 +21,7 @@ class SettingsHandler:
 
     def generateDefaultSettings(self) -> dict:
         default = {
-            'IMAGE_FOLDER': 'C:\\Example\\Path',
+            'IMAGE_FOLDER': 'C:\\Example',
         }
         with open('settings.json', 'w') as settings:
             settings.write(json.dumps(default))
