@@ -21,7 +21,7 @@ class SettingsHandler:
 
     def generateDefaultSettings(self) -> dict:
         default = {
-            'IMAGE_FOLDER': '\\\\server\\Maszyny\\Bysprint Fiber 2000\\Ustawienia Bysoft 7\\Parts\\PRODUKCJA',
+            'IMAGE_FOLDER': 'C:\\Example',
         }
         with open('settings.json', 'w') as settings:
             settings.write(json.dumps(default))
