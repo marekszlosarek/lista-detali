@@ -87,7 +87,8 @@ class Detail:
                 if filename.endswith('png') and (
                     filename.startswith(self.serialNumber + ' ') or 
                     filename.startswith(self.serialNumber + '-') or
-                    filename.startswith(self.serialNumber + '_') 
+                    filename.startswith(self.serialNumber + '_') or
+                    filename.startswith(self.serialNumber + '.') 
                 ):
                     self.components.append(self.generateComponent(filename))
 
@@ -97,7 +98,7 @@ class Detail:
         filename = filename.removesuffix('.png')
         fixedName = filename.replace(' ', '_').replace('#_', '#') + '_'
         while '__' in fixedName:
-            fixedName.replace('__', '_')
+            fixedName = fixedName.replace('__', '_')
 
         # Wartości numeryczne pomiędzy nawiasami
         countSearch = re.findall(r"\((\d+)\)", fixedName) 
